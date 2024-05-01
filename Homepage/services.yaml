@@ -1,0 +1,113 @@
+---
+# For configuration options and examples, please see:
+# https://gethomepage.dev/latest/configs/services
+
+- Proxmox Server:
+    - PROXVM-SRV:
+        description: OS and Hardware
+        icon: /icons/proxmox.svg
+        siteMonitor: https://REPLACE_WITH_PROXMOX_IP:8006/
+        widget:
+          type: customapi
+          url: http://REPLACE_WITH_PROXMOX_IP:9314/metrics
+          refreshInterval: 10000000
+          display: list
+          mappings:
+            - field: osName
+              label: OS
+              format: text
+            - field: osVersion
+              label: Kernel
+              format: text
+            - field: osArch
+              label: Arch
+              format: text
+            - field: cpuName
+              label: CPU
+              format: text
+            - field: mboName
+              label: MBO
+              format: text
+    - PROXVM-SRV:
+        description: CPU and RAM
+        icon: /icons/proxmox.svg
+        siteMonitor: https://REPLACE_WITH_PROXMOX_IP:8006/
+        widget:
+          type: customapi
+          url: http://REPLACE_WITH_PROXMOX_IP:9314/metrics
+          refreshInterval: 10000
+          display: list
+          mappings:
+            - field: cpuLoad
+              label: CPU load
+              format: text
+            - field: totalMemory
+              label: Total memory
+              format: text
+            - field: usedMemory
+              label: Used memory
+              format: text
+            - field: freeMemory
+              label: Free memory
+              format: text
+            - field: uptime
+              label: Uptime
+              format: text
+    - PROXVM-SRV:
+        description: Storage
+        icon: /icons/proxmox.svg
+        siteMonitor: https://REPLACE_WITH_PROXMOX_IP:8006/
+        widget:
+          type: customapi
+          url: http://REPLACE_WITH_PROXMOX_IP:9314/metrics
+          refreshInterval: 100000
+          display: list
+          mappings:
+            - field:
+                disks:
+                  0: totalSpace
+              label: System Storage
+              prefix: "Total: "
+              format: text
+              additionalField:
+                field:
+                  disks:
+                    0: freeSpace
+                prefix: "  Free: "
+                format: text
+            - field:
+                disks:
+                  1: totalSpace
+              label: /mnt/PROXMOX-STORAGE
+              prefix: "Total: "
+              format: text
+              additionalField:
+                field:
+                  disks:
+                    1: freeSpace
+                prefix: "  Free: "
+                format: text
+            - field:
+                disks:
+                  2: totalSpace
+              label: /mnt/PROXMOX-STORAGE2
+              prefix: "Total: "
+              format: text
+              additionalField:
+                field:
+                  disks:
+                    2: freeSpace
+                prefix: "  Free: "
+                format: text
+            - field:
+                disks:
+                  3: totalSpace
+              label: /mnt/PROXMOX-BACKUP
+              prefix: "Total: "
+              format: text
+              additionalField:
+                field:
+                  disks:
+                    3: freeSpace
+                prefix: "  Free: "
+                format: text
