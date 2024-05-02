@@ -44,7 +44,8 @@ jobs:
       env:
         USERNAME: ${{ github.actor }}
         TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: ./gradlew publish
+      run: ./gradlew publish --info
+      continue-on-error: true
       
     - name: Check Environment Variables
       run: echo "Username is $USERNAME"
