@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import oshi.SystemInfo;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -80,9 +81,11 @@ public class MetricsService {
                     String.format("%d GB", (root.getFreeSpace() / bytesDevider))
             ));
         }
+        Process process = null;
+        BufferedReader reader = null;
         try {
-            Process process = Runtime.getRuntime().exec("df -h --output=target,size,avail"); // Using df command
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            process = Runtime.getRuntime().exec("df -h --output=target,size,avail"); // Using df command
+            reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
             reader.readLine(); // skip the header line
 
@@ -97,6 +100,17 @@ public class MetricsService {
             }
         } catch (Exception e) {
             log.info("Error running df command, probably not Linux...");
+        } finally {
+            if (reader != null) {
+                try {
+                    reader.close();
+                } catch (IOException e) {
+                    log.error("Failed to close the BufferedReader", e);
+                }
+            }
+            if (process != null) {
+                process.destroy();
+            }
         }
         return diskMetrics;
     }

@@ -3,7 +3,6 @@ package com.klabazan.JavaSysMonitor.Repository;
 import com.klabazan.JavaSysMonitor.Repository.Interface.MetricsRepository;
 import com.klabazan.JavaSysMonitor.Models.SystemMetrics;
 import org.springframework.stereotype.Component;
-
 import java.util.concurrent.atomic.AtomicReference;
 
 @Component

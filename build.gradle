@@ -7,7 +7,7 @@ plugins {
 }
 
 group = 'com.klabazan'
-version = '1.1.0'
+version = '1.1.1'
 
 java {
     sourceCompatibility = '17'
@@ -42,7 +42,32 @@ publishing {
     }
     publications {
         gpr(MavenPublication) {
-            from(components.java)
+            from components.java
+
+            groupId = 'com.klabazan'
+            artifactId = 'JavaSysMonitor'
+            version = '1.1.1'
+
+            pom {
+                name = 'JavaSysMonitor'
+                description = 'Small Java SpringBoot REST API service that collects system info'
+                url = 'https://github.com/retoocs007/JavaSysMonitor'
+
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'https://www.gnu.org/licenses/gpl-3.0.en.html'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'retoocs007'
+                        name = 'Krunoslav Labazan'
+                        email = 'klabazan@gmail.com'
+                    }
+                }
+            }
         }
     }
 }
