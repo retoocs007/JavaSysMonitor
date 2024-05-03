@@ -17,6 +17,7 @@ Example how it looks - three large boxes named PROXVM-SRV:
 
 ### Requirements for running:
  - Java 17
+ - df package on Linux for getting disk info
 
 ### Endpoints
 >  ```metrics``` - http://IP_ADDRESS:9314/metrics
@@ -73,3 +74,6 @@ Change IP and port accordingly.
 
 Example how to run on Debian in the background:
 > nohup java -jar JavaSysMonitor.war > JavaSysMonitor.log 2>&1 & 
+
+Potentially it can be used for getting system information of other PCs (Windows, macOS (not tested), VMs) and display
+it in Homepage.
