@@ -31,8 +31,6 @@ public class SystemMetrics {
         this.uptime = uptime;
     }
 
-    // Getters and Setters
-
     public String getCpuLoad() {
         return cpuLoad;
     }

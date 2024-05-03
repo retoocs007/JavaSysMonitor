@@ -11,8 +11,6 @@ public class DiskMetrics {
         this.freeSpace = freeSpace;
     }
 
-    // Getters and Setters
-
     public String getName() {
         return name;
     }
