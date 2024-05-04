@@ -44,7 +44,7 @@ publishing {
         gpr(MavenPublication) {
             from components.java
 
-            groupId = 'com.klabazan'
+            groupId = 'com.github.retoocs007'
             artifactId = 'JavaSysMonitor'
             version = '1.1.2'
 
