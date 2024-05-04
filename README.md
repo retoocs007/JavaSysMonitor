@@ -72,8 +72,16 @@ Example response:
 In the ```Homepage``` folder there is ```services.yaml``` example how to configure Custom API widget with this service.
 Change IP and port accordingly.
 
+
+### Running on Debian systems
 Example how to run on Debian in the background:
 > nohup java -jar JavaSysMonitor.war > JavaSysMonitor.log 2>&1 & 
 
-Potentially it can be used for getting system information of other PCs (Windows, macOS (not tested), VMs) and display
+Don't forget to rotate logs or restart service once in a while. Or if you don't need logging you can exclude that part
+from the command:
+
+> nohup java -jar JavaSysMonitor.war 2>&1 &
+
+### Other
+Potentially this service can be used for getting system information of other PCs (Windows, macOS (not tested), VMs) and display
 it in Homepage.

@@ -26,14 +26,14 @@ public class MetricsService {
     @Autowired
     private MetricsRepository metricsRepository;
 
-    public SystemMetrics fetchAndUpdateMetrics() {
-        SystemMetrics metrics = fetchSystemMetrics();  // Method to fetch system metrics
+    public SystemMetrics fetchAndUpdateMetrics(String guid) {
+        SystemMetrics metrics = fetchSystemMetrics(guid);  // Method to fetch system metrics
         metricsRepository.setMetrics(metrics);
         return metrics;
     }
 
-    private SystemMetrics fetchSystemMetrics() {
-        log.info("Getting System Metrics...");
+    private SystemMetrics fetchSystemMetrics(String guid) {
+        log.info(guid + ": Getting System Metrics...");
 
         if (prevTicks == null) {
             prevTicks = systemInfo.getHardware().getProcessor().getSystemCpuLoadTicks();
@@ -45,7 +45,7 @@ public class MetricsService {
                 - systemInfo.getHardware().getMemory().getAvailable())) / bytesDevider);
         String totalMemory = String.format("%.2f GB", ((double) systemInfo.getHardware().getMemory().getTotal() / bytesDevider));
         String freeMemory = String.format("%.2f GB", ((double) systemInfo.getHardware().getMemory().getAvailable() / bytesDevider));
-        List<DiskMetrics> disks = getDiskMetrics();
+        List<DiskMetrics> disks = getDiskMetrics(guid);
         String osName = systemInfo.getOperatingSystem().toString().replace("GNU/Linux ","");
         String osVersion = System.getProperty("os.version");
         String osArch = System.getProperty("os.arch");
@@ -55,7 +55,7 @@ public class MetricsService {
         String mboName = systemInfo.getHardware().getComputerSystem().getManufacturer() + " - " +
                 systemInfo.getHardware().getComputerSystem().getModel().replace(" (version: Default string)","");
 
-        log.info("Returning System Metrics...");
+        log.info(guid + ": Returning System Metrics...");
         return new SystemMetrics(
                 cpuLoad,
                 usedMemory,
@@ -71,7 +71,7 @@ public class MetricsService {
         );
     }
 
-    private List<DiskMetrics> getDiskMetrics() {
+    private List<DiskMetrics> getDiskMetrics(String guid) {
         List<DiskMetrics> diskMetrics = new ArrayList<>();
         File[] roots = File.listRoots();
         for (File root : roots) {
@@ -99,13 +99,13 @@ public class MetricsService {
                 }
             }
         } catch (Exception e) {
-            log.info("Error running df command, probably not Linux...");
+            log.info(guid + ": Error running df command, probably not Linux...");
         } finally {
             if (reader != null) {
                 try {
                     reader.close();
                 } catch (IOException e) {
-                    log.error("Failed to close the BufferedReader", e);
+                    log.error(guid + ": Failed to close the BufferedReader", e);
                 }
             }
             if (process != null) {
