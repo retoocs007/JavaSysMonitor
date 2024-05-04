@@ -22,6 +22,8 @@ Example how it looks - three large boxes named PROXVM-SRV:
 ### Endpoints
 >  ```metrics``` - http://IP_ADDRESS:9314/metrics
 
+>  Optional parameter ```id``` - http://IP_ADDRESS:9314/metrics?id=test
+
 This endpoint returns:
  - cpuLoad
  - usedMemory
@@ -39,6 +41,9 @@ This endpoint returns:
  - upTime
 
 Port can be changed in ```application.properties```.
+
+Optional parameter ```id``` can be used to further separate and identify callers that are calling this endpoint.
+It's not required, and it doesn't affect response.
 
 Example response:
 
