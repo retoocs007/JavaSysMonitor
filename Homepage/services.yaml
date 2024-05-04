@@ -3,13 +3,13 @@
 # https://gethomepage.dev/latest/configs/services
 
 - Proxmox Server:
-    - PROXVM-SRV:
+    - "PROXVM-SRV ": #one space in the name, so it's unique PROXVM-SRV block
         description: OS and Hardware
         icon: /icons/proxmox.svg
         siteMonitor: https://REPLACE_WITH_PROXMOX_IP:8006/
         widget:
           type: customapi
-          url: http://REPLACE_WITH_PROXMOX_IP:9314/metrics
+          url: http://REPLACE_WITH_PROXMOX_IP:9314/metrics?id=OSandHW
           refreshInterval: 10000000
           display: list
           mappings:
@@ -28,13 +28,13 @@
             - field: mboName
               label: MBO
               format: text
-    - PROXVM-SRV:
+    - "PROXVM-SRV  ": #two spaces in the name, so it's unique PROXVM-SRV block
         description: CPU and RAM
         icon: /icons/proxmox.svg
         siteMonitor: https://REPLACE_WITH_PROXMOX_IP:8006/
         widget:
           type: customapi
-          url: http://REPLACE_WITH_PROXMOX_IP:9314/metrics
+          url: http://REPLACE_WITH_PROXMOX_IP:9314/metrics?id=CPUandRAM
           refreshInterval: 10000
           display: list
           mappings:
@@ -53,13 +53,13 @@
             - field: uptime
               label: Uptime
               format: text
-    - PROXVM-SRV:
+    - "PROXVM-SRV  ": #three spaces in the name, so it's unique PROXVM-SRV block
         description: Storage
         icon: /icons/proxmox.svg
         siteMonitor: https://REPLACE_WITH_PROXMOX_IP:8006/
         widget:
           type: customapi
-          url: http://REPLACE_WITH_PROXMOX_IP:9314/metrics
+          url: http://REPLACE_WITH_PROXMOX_IP:9314/metrics?id=Storage
           refreshInterval: 100000
           display: list
           mappings:
