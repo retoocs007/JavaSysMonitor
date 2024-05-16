@@ -27,10 +27,15 @@ jobs:
       - name: List build/libs directory contents for debugging
         run: ls -alh build/libs
 
+      - name: Find and upload WAR file
+        run: |
+          WAR_FILE=$(ls build/libs/*.war | grep -v 'plain')
+          echo "WAR_FILE=$WAR_FILE" >> $GITHUB_ENV
+
       - name: Upload WAR file to Release
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: build/libs/JavaSysMonitor.war
+          asset_path: ${{ env.WAR_FILE }}
           asset_name: JavaSysMonitor.war
           asset_content_type: application/zip
