@@ -1,61 +1,66 @@
-package com.klabazan.JavaSysMonitor.Service;
+package com.klabazan.JavaSysMonitor.service;
 
-import com.klabazan.JavaSysMonitor.Models.DiskMetrics;
-import com.klabazan.JavaSysMonitor.Models.SystemMetrics;
-import com.klabazan.JavaSysMonitor.Repository.Interface.MetricsRepository;
+import com.klabazan.JavaSysMonitor.component.CpuMonitor;
+import com.klabazan.JavaSysMonitor.component.SystemInfo;
+import com.klabazan.JavaSysMonitor.model.DiskMetrics;
+import com.klabazan.JavaSysMonitor.model.GeneralMetric;
+import com.klabazan.JavaSysMonitor.model.MetricType;
+import com.klabazan.JavaSysMonitor.model.SystemMetrics;
+import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import oshi.SystemInfo;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
+import oshi.software.os.FileSystem;
+import oshi.software.os.OSFileStore;
+
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import static com.klabazan.JavaSysMonitor.model.MetricType.*;
 
 @Service
+@RequiredArgsConstructor
 public class MetricsService {
     private static final Logger log = LoggerFactory.getLogger(MetricsService.class);
-    private final long bytesDevider = (1024 * 1024 * 1024);
-    private final SystemInfo systemInfo = new SystemInfo();
+    private static final long BYTES_DIVIDER = (1024 * 1024 * 1024);
     private long[] prevTicks = null;
+    private final SystemInfo systemInfo;
+    private final CpuMonitor cpuMonitor;
 
-    @Autowired
-    private MetricsRepository metricsRepository;
+    private static final Set<String> EXCLUDED_MOUNTS = Set.of(
+            "/tmp", "/boot/efi", "/var/lib/lxcfs", "/proc", "/sys", "/dev", "/run"
+    );
 
-    public SystemMetrics fetchAndUpdateMetrics(String guid, String id) {
-        SystemMetrics metrics = fetchSystemMetrics(guid, id);  // Method to fetch system metrics
-        metricsRepository.setMetrics(metrics);
-        return metrics;
-    }
+    private static final Set<String> EXCLUDED_FS_TYPES = Set.of(
+            "proc", "sysfs", "tmpfs", "devtmpfs", "devfs", "overlay", "squashfs", "nsfs",
+            "tracefs", "securityfs", "cgroup", "cgroup2", "fusectl", "debugfs", "ramfs",
+            "autofs", "mqueue", "pstore", "bpf"
+    );
 
-    private SystemMetrics fetchSystemMetrics(String guid, String id) {
-        log.info("GUID: " + guid + ", ID: " + id + ", Getting System Metrics...");
+    public SystemMetrics fetchSystemMetrics(String guid, String id) {
+        log.info("GUID: {}, ID: {}, Getting System Metrics...", guid, id);
 
         if (prevTicks == null) {
             prevTicks = systemInfo.getHardware().getProcessor().getSystemCpuLoadTicks();
         }
-        String cpuLoad = String.format("%.2f %%", systemInfo.getHardware().getProcessor().getSystemCpuLoadBetweenTicks(prevTicks) * 100);
-        prevTicks = systemInfo.getHardware().getProcessor().getSystemCpuLoadTicks();
 
+        String cpuLoad = String.format("%.2f %%", cpuMonitor.getCpuLoad() * 100);
         String usedMemory = String.format("%.2f GB", ((double) (systemInfo.getHardware().getMemory().getTotal()
-                - systemInfo.getHardware().getMemory().getAvailable())) / bytesDevider);
-        String totalMemory = String.format("%.2f GB", ((double) systemInfo.getHardware().getMemory().getTotal() / bytesDevider));
-        String freeMemory = String.format("%.2f GB", ((double) systemInfo.getHardware().getMemory().getAvailable() / bytesDevider));
+                - systemInfo.getHardware().getMemory().getAvailable())) / BYTES_DIVIDER);
+        String totalMemory = systemInfo.getTotalMemory();
+        String freeMemory = String.format("%.2f GB", ((double) systemInfo.getHardware().getMemory().getAvailable() / BYTES_DIVIDER));
         List<DiskMetrics> disks = getDiskMetrics(guid, id);
-        String osName = systemInfo.getOperatingSystem().toString().replace("GNU/Linux ","");
-        String osVersion = System.getProperty("os.version");
-        String osArch = System.getProperty("os.arch");
+        String osName = systemInfo.getOsName();
+        String osVersion = systemInfo.getOsVersion();
+        String osArch = systemInfo.getOsArch();
 
-        String cpuName = systemInfo.getHardware().getProcessor().getProcessorIdentifier().getName();
-        String upTime = formatUptime(systemInfo.getOperatingSystem().getSystemUptime() * 1000);
-        String mboName = systemInfo.getHardware().getComputerSystem().getManufacturer() + " - " +
-                systemInfo.getHardware().getComputerSystem().getModel().replace(" (version: Default string)","");
+        String cpuName = systemInfo.getCpuName();
+        String upTime = systemInfo.getUptime();
+        String mboName = systemInfo.getMboName();
 
-        log.info("GUID: " + guid + ", ID: " + id + ", Returning System Metrics...");
+        log.info("GUID: {}, ID: {}, Returning System Metrics...", guid, id);
         return new SystemMetrics(
                 cpuLoad,
                 usedMemory,
@@ -73,55 +78,76 @@ public class MetricsService {
 
     private List<DiskMetrics> getDiskMetrics(String guid, String id) {
         List<DiskMetrics> diskMetrics = new ArrayList<>();
-        File[] roots = File.listRoots();
-        for (File root : roots) {
-            diskMetrics.add(new DiskMetrics(
-                    root.getAbsolutePath(),
-                    String.format("%d GB", (root.getTotalSpace() / bytesDevider)),
-                    String.format("%d GB", (root.getFreeSpace() / bytesDevider))
-            ));
-        }
-        Process process = null;
-        BufferedReader reader = null;
-        try {
-            process = Runtime.getRuntime().exec("df -h --output=target,size,avail"); // Using df command
-            reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            reader.readLine(); // skip the header line
 
-            while ((line = reader.readLine()) != null) {
-                String[] tokens = line.trim().split("\\s+");
-                if (tokens.length >= 3 && tokens[0].startsWith("/mnt")) {
-                    String mountPoint = tokens[0];
-                    String totalSpace = tokens[1].replace("G", " GB");
-                    String freeSpace = tokens[2].replace("G", " GB");
-                    diskMetrics.add(new DiskMetrics(mountPoint, totalSpace, freeSpace));
-                }
+        try {
+            FileSystem fileSystem =
+                    systemInfo.getSystemInfo()
+                            .getOperatingSystem()
+                            .getFileSystem();
+
+            for (OSFileStore store : fileSystem.getFileStores()) {
+                String storeMount = store.getMount();
+
+                if (EXCLUDED_MOUNTS.contains(storeMount)) continue;
+                if (EXCLUDED_FS_TYPES.contains(store.getType())) continue;
+                if (storeMount.startsWith("/snap")) continue;
+                if (storeMount.startsWith("/proc")) continue;
+                if (storeMount.startsWith("/sys")) continue;
+                if (storeMount.startsWith("/run")) continue;
+                if (storeMount.startsWith("/dev")) continue;
+
+                long totalSpace = store.getTotalSpace();
+                long freeSpace = store.getUsableSpace();
+
+                if (totalSpace <= 0) continue;
+
+                diskMetrics.add(new DiskMetrics(
+                        storeMount,
+                        String.format("%d GB", totalSpace / BYTES_DIVIDER),
+                        String.format("%d GB", freeSpace / BYTES_DIVIDER),
+                        "Total: " + String.format("%d GB", totalSpace / BYTES_DIVIDER) +
+                        "\u00A0\u00A0" +
+                        "Free: " + String.format("%d GB", freeSpace / BYTES_DIVIDER)
+                ));
             }
         } catch (Exception e) {
-            log.info("GUID: " + guid + ", ID: " + id + ", Error running df command, probably not Linux...");
-        } finally {
-            if (reader != null) {
-                try {
-                    reader.close();
-                } catch (IOException e) {
-                    log.error("GUID: " + guid + ", ID: " + id + ", Failed to close the BufferedReader...", e);
-                }
-            }
-            if (process != null) {
-                process.destroy();
-            }
+            log.error("GUID: {}, ID: {}, Failed to get disk metrics",
+                    guid, id, e);
         }
+
         return diskMetrics;
     }
 
-    private String formatUptime(long uptime) {
-        Duration duration = Duration.ofMillis(uptime);
-        long days = duration.toDays();
-        long hours = duration.toHours() - days * 24;
-        long minutes = duration.toMinutesPart();
-        long seconds = duration.toSecondsPart();
+    public List<GeneralMetric> fetchSystemMetricsAsList(String guid, String id, List<MetricType> allowedTypes) {
+        if(allowedTypes == null || allowedTypes.isEmpty()){
+            allowedTypes = Arrays.asList(MetricType.values());
+        }
 
-        return String.format("%02dd:%02dh:%02dm:%02ds", days, hours, minutes, seconds);
+        SystemMetrics systemMetrics = fetchSystemMetrics(guid, id);
+        List<GeneralMetric>  generalMetrics = new ArrayList<>();
+
+        generalMetrics.add(new GeneralMetric("CPU load", systemMetrics.getCpuLoad(), CPU_LOAD));
+        generalMetrics.add(new GeneralMetric("Total memory", systemMetrics.getTotalMemory(), MEM_TOTAL));
+        generalMetrics.add(new GeneralMetric("Used memory", systemMetrics.getUsedMemory(), MEM_USED));
+        generalMetrics.add(new GeneralMetric("Free memory", systemMetrics.getFreeMemory(), MEM_FREE));
+        generalMetrics.add(new GeneralMetric("OS", systemMetrics.getOsName(), OS));
+        generalMetrics.add(new GeneralMetric("Kernel", systemMetrics.getOsVersion(), KERNEL));
+        generalMetrics.add(new GeneralMetric("Arch", systemMetrics.getOsArch(), ARCH));
+        generalMetrics.add(new GeneralMetric("CPU", systemMetrics.getCpuName(), CPU_NAME));
+        generalMetrics.add(new GeneralMetric("MBO", systemMetrics.getMboName(), MBO));
+        generalMetrics.add(new GeneralMetric("Uptime", systemMetrics.getUptime(), UPTIME));
+
+        for (DiskMetrics disk : systemMetrics.getDisks()) {
+            generalMetrics.add(new GeneralMetric(disk.getName(), disk.getCombinedSpace(), DISK));
+        }
+
+        Map<MetricType, Integer> order = IntStream.range(0, allowedTypes.size())
+                .boxed()
+                .collect(Collectors.toMap(allowedTypes::get, Function.identity()));
+
+        return generalMetrics.stream()
+                .filter(metric -> order.containsKey(metric.getType()))
+                .sorted(Comparator.comparingInt(metric -> order.get(metric.getType())))
+                .toList();
     }
 }
