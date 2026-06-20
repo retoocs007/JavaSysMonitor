@@ -1,9 +1,11 @@
 # JavaSysMonitor
-Small Java SpringBoot REST API service that collects system info.
+Small Java Spring Boot REST API service that collects system information from the host it runs on.
 
-This is created for personal use with Homepage Custom API widget.
+Originally created for personal use with Homepage Custom API widgets, but it is freely available for anyone to use, modify, and integrate into their own projects.
 
->  https://gethomepage.dev/latest/widgets/services/customapi/
+This project is provided as-is, without any guarantees or warranties. If it works for your use case, great. If not, feel free to fork it and adapt it to your needs.
+
+>  https://gethomepage.dev/widgets/services/customapi/
 
 
 Example how it looks - three large boxes named PROXVM-SRV:
@@ -19,9 +21,9 @@ Example how it looks - three large boxes named PROXVM-SRV:
  - Java 17
 
 ### Endpoints
->  GET ```metrics``` - http://IP_ADDRESS:9314/metrics
+>  GET ```metrics``` - ```http://IP_ADDRESS:9314/metrics```
 
-Optional parameter ```id``` - http://IP_ADDRESS:9314/metrics?id=test
+Optional parameter ```id``` - ```http://IP_ADDRESS:9314/metrics?id=test```
 
 This endpoint returns:
  - cpuLoad
@@ -99,13 +101,13 @@ Homepage example:
               format: text
 ```
 
->  GET ```metrics-as-list``` - http://IP_ADDRESS:9314/metrics-as-list
+> GET ```metrics-as-list``` - ```http://IP_ADDRESS:9314/metrics-as-list```
 
-Optional parameter ```id``` - http://IP_ADDRESS:9314/metrics-as-list?id=test
+Optional parameter ```id``` - ```http://IP_ADDRESS:9314/metrics-as-list?id=test```
 
-Optional parameter ```allowedTypes``` - http://IP_ADDRESS:9314/metrics-as-list?allowedTypes=OS,KERNEL,ARCH,CPU_NAME,MBO
+Optional parameter ```allowedTypes``` - ```http://IP_ADDRESS:9314/metrics-as-list?allowedTypes=OS,KERNEL,ARCH,CPU_NAME,MBO```
 
-Combined example - - http://IP_ADDRESS:9314/metrics-as-list?id=test&allowedTypes=OS,KERNEL,ARCH,CPU_NAME,MBO
+Combined example - ```http://IP_ADDRESS:9314/metrics-as-list?id=test&allowedTypes=OS,KERNEL,ARCH,CPU_NAME,MBO```
 
 | allowedTypes avaliable values |
 |-------------------------------|
@@ -232,6 +234,94 @@ Homepage example:
             limit: 5
 ```
 
+> POST ```metrics-as-list-renamed``` - ```http://IP_ADDRESS:9314/metrics-as-list-renamed```
+
+Same as ```metrics-as-list``` but POST method with optional body. In the body can be set list of oldLabel and newLable pairs like this:
+
+```
+[
+  {
+    "oldLabel": "OS",
+    "newLabel": "Operating System"
+  },
+  {
+    "oldLabel": "MBO",
+    "newLabel": "Motherboard"
+  },
+  {
+    "oldLabel": "C:\\",
+    "newLabel": "System disk"
+  },
+  {
+    "oldLabel": "D:\\",
+    "newLabel": "Data disk"
+  }
+]
+```
+
+Then in response labels will be replaced with new values:
+```
+[
+  {
+    "label": "Operating System",
+    "value": "Microsoft Windows 11 build 26100",
+    "type": "OS"
+  },
+  {
+    "label": "Kernel",
+    "value": "10.0",
+    "type": "KERNEL"
+  },
+  {
+    "label": "Arch",
+    "value": "amd64",
+    "type": "ARCH"
+  },
+  {
+    "label": "CPU",
+    "value": "Intel(R) Core(TM) i5-7600 CPU @ 3.50GHz",
+    "type": "CPU_NAME"
+  },
+  {
+    "label": "Motherboard",
+    "value": "ASUSTeK COMPUTER INC. - unknown",
+    "type": "MBO"
+  },
+  {
+    "label": "System disk",
+    "value": "Total: 222 GB  Free: 96 GB",
+    "type": "DISK"
+  },
+  {
+    "label": "Data disk",
+    "value": "Total: 223 GB  Free: 85 GB",
+    "type": "DISK"
+  }
+]
+```
+
+Homepage example:
+```
+    - "PROXVM-SRV":
+        description: Storage
+        icon: /icons/proxmox.svg
+        siteMonitor: https://IP_ADDRESS:8006/
+        widget:
+          type: customapi
+          url: http://IP_ADDRESS:9314/metrics-as-list-renamed?id=Storage&allowedTypes=DISK
+          method: POST
+          headers:
+            Content-Type: application/json
+          requestBody: "[{\"oldLabel\":\"C:\\\\\",\"newLabel\":\"System disk\"},{\"oldLabel\":\"D:\\\\\",\"newLabel\":\"Data disk\"}]"
+          refreshInterval: 100000
+          display: dynamic-list
+          mappings:
+            items: 
+            name: label
+            label: value
+            limit: 5
+```
+
 ### Homepage examples
 In the ```Homepage``` folder there is ```services.yaml``` example how to configure Custom API widget with this service.
 Change IP and port accordingly.
@@ -247,6 +337,6 @@ from the command:
 
 ### Other
 Potentially this service can be used for getting system information of other PCs (Windows, macOS (not tested), VMs) and display
-it in Homepage.
+it on the Homepage.
 
 Port can be changed in ```application.properties```.

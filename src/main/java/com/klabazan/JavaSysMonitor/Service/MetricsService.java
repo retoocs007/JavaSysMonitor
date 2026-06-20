@@ -2,10 +2,7 @@ package com.klabazan.JavaSysMonitor.service;
 
 import com.klabazan.JavaSysMonitor.component.CpuMonitor;
 import com.klabazan.JavaSysMonitor.component.SystemInfo;
-import com.klabazan.JavaSysMonitor.model.DiskMetrics;
-import com.klabazan.JavaSysMonitor.model.GeneralMetric;
-import com.klabazan.JavaSysMonitor.model.MetricType;
-import com.klabazan.JavaSysMonitor.model.SystemMetrics;
+import com.klabazan.JavaSysMonitor.model.*;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,7 +115,7 @@ public class MetricsService {
         return diskMetrics;
     }
 
-    public List<GeneralMetric> fetchSystemMetricsAsList(String guid, String id, List<MetricType> allowedTypes) {
+    public List<GeneralMetric> fetchSystemMetricsAsList(String guid, String id, List<MetricType> allowedTypes, List<RenameLabel> renameLabels) {
         if(allowedTypes == null || allowedTypes.isEmpty()){
             allowedTypes = Arrays.asList(MetricType.values());
         }
@@ -139,6 +136,21 @@ public class MetricsService {
 
         for (DiskMetrics disk : systemMetrics.getDisks()) {
             generalMetrics.add(new GeneralMetric(disk.getName(), disk.getCombinedSpace(), DISK));
+        }
+
+        if (renameLabels != null && !renameLabels.isEmpty()) {
+            Map<String, String> labelMap = renameLabels.stream()
+                    .collect(Collectors.toMap(
+                            RenameLabel::getOldLabel,
+                            RenameLabel::getNewLabel
+                    ));
+
+            generalMetrics.forEach(metric -> {
+                String newLabel = labelMap.get(metric.getLabel());
+                if (newLabel != null) {
+                    metric.setLabel(newLabel);
+                }
+            });
         }
 
         Map<MetricType, Integer> order = IntStream.range(0, allowedTypes.size())
