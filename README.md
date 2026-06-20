@@ -146,7 +146,7 @@ It's not required, and it doesn't affect response.
 Optional parameter ```allowedTypes``` can be sent with list of available values (see table above).
 If allowedTypes is not sent then all metrics will be returned.
 List is also order, how values are sent that way will be ordered.
-Labels are fixed at the moment. Future plan is to add POST method and in the body user can sent list of values for replacing labels.
+Labels are fixed on this endpoint. Use ```metrics-as-list-renamed``` if you want to change lables.
 
 This endpoint is intended for use with ```Homepage customapi dynamic-list``` feature.
 
